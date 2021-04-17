@@ -3,16 +3,16 @@ import java.io.*;
 import java.net.*;
 
 public class Client {
-	Socket socket = null;
-	PrintStream out = null;
+    protected Socket socket = null;
+    PrintStream out = null;
     BufferedReader in = null;
     
     public Client(String host, int port) {
     	try {
-        	this.socket = new Socket(host, port);
-    	} catch (Exception e) {
-			e.printStackTrace();
-		}
+            this.socket = new Socket(host, port);
+    	} catch (Exception ex) {
+            System.err.println(ex);
+        }
     }
     
     public void start() {
@@ -21,10 +21,10 @@ public class Client {
         try {
             out = new PrintStream(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        } catch (Exception e) {
-        	System.err.println(e);
-			System.exit(1);
-		}
+        } catch (Exception ex) {
+            System.err.println(ex);
+            System.exit(1);
+        }
     }
     
     public String send(String mensagem) throws IOException {
@@ -39,7 +39,7 @@ public class Client {
     	in.close();
     	socket.close();
     	in = null;
-		out = null;
-		socket = null;
+        out = null;
+        socket = null;
     }
 }
