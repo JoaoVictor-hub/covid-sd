@@ -1,0 +1,2 @@
+# covid-sd
+Sistema Distribuído
