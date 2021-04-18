@@ -7,9 +7,11 @@ import com.google.gson.*;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
+import models.Avaliacao;
 
 import models.BaseModel;
 import models.ConfirmacaoLogin;
+import models.Respostas;
 import views.Server;
 
 public class TCPServer extends Thread {
@@ -52,17 +54,20 @@ public class TCPServer extends Thread {
                     return;
                 }
                 //System.out.println("Recebendo -> " + inputLine);
-                print("Recebendo -> " + inputLine);
+                print("Recebendo do cliente -> " + inputLine);
                 String resposta = null;
                 String codigo = getCod(inputLine);
                 switch (codigo) {
                 case "1":
-                    resposta = Login(inputLine);
+                    resposta = login(inputLine);
+                    break;
+                case "7":
+                    resposta = probabilidade(inputLine);
                     break;
                 default:
                      resposta = "Funcionalidade não implementada";
                 }
-                print("Enviando -> " + resposta);
+                print("Enviando para o cliente -> " + resposta);
                 out.println(resposta);
 
             }
@@ -118,8 +123,22 @@ public class TCPServer extends Thread {
             return "0";
         }
     }
-
-    public String Login(String input) {
+    public String probabilidade(String input) {
+        Gson gson = new Gson();
+        String resposta = "";
+        Respostas respostas = new Gson().fromJson(input, Respostas.class);
+        
+        //TODO: Calcular probabilidade com base nas respostas do formulario
+        
+        Avaliacao avaliacao = new Avaliacao();
+        avaliacao.setCodigo("8");
+        avaliacao.setCovid("true");
+        
+        resposta = gson.toJson(avaliacao);
+        return resposta;
+    }
+    
+    public String login(String input) {
         try {
             DBHelper DbHelper = new DBHelper();
             Gson gson = new Gson();

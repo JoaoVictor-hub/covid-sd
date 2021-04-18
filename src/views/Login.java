@@ -5,17 +5,20 @@ import java.io.IOException;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
+import models.ConfirmacaoLogin;
 import models.Usuario;
 import static views.Main.client;
 
 public class Login {
     
-    public Scene getScene(){
+    public void getScene(Stage root){
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
         Scene scene = new Scene(gridPane,400,400);
@@ -40,16 +43,23 @@ public class Login {
                 Gson gson = new Gson();
                 String json = gson.toJson(login);
 
-                System.out.println ("Enviando para o host -> " + json);
+                System.out.println ("Enviando para o servidor -> " + json);
                 try {
                    String resposta = client.send(json);
-                   System.out.println ("Resposta -> " + resposta);
+                   System.out.println ("Resposta do servidor-> " + resposta);
+                   
+                   ConfirmacaoLogin confirmacao = new Gson().fromJson(resposta, ConfirmacaoLogin.class);
+                   
+                   if (confirmacao.getSuccess().equals("true")){
+                       Formulario form  = new Formulario();
+                       root.setScene(form.getScene());
+                   }
+                   
 
                 } catch (IOException ex) {
-                    System.out.println (ex);
+                    System.err.println (ex);
                 }
         });
-        
-        return scene;
+        root.setScene(scene);
     }
 }

@@ -50,7 +50,7 @@ public class Main extends Application {
                 this.client = new Client(hostTx.getText(), Integer.parseInt(portTx.getText()));
                 this.client.start();
                 Login login  = new Login();
-                window.setScene(login.getScene());
+                login.getScene(window);
             });
             
             serverBt.setOnAction(e -> {
