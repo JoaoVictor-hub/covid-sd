@@ -6,7 +6,9 @@ import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "Usuario")
 public class Usuario extends BaseModel{
-	
+	@DatabaseField(generatedId = true)
+	public Integer id;
+        
 	@DatabaseField(dataType = DataType.STRING, canBeNull = false)
 	private String usuario;
 	

@@ -1,13 +1,11 @@
 package views;
 import client.Client;
 import java.io.IOException;
-import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.Stage;
-import models.Usuario;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -16,11 +14,14 @@ import javafx.scene.layout.GridPane;
 
 
 public class Main extends Application {
-    //static Client client = new Client("127.0.0.1", 10008);
+    public static Client client = null;
     Stage window;
+    
     @Override
     public void start(Stage primaryStage) {
         try {
+            
+            
             window = primaryStage;
             GridPane root = new GridPane();
             root.setAlignment(Pos.CENTER);
@@ -46,28 +47,32 @@ public class Main extends Application {
             GridPane.setHalignment(serverBt, HPos.CENTER);
             
             clientBt.setOnAction(e -> {
-                    //client.start();
-                    Usuario login = new Usuario();
-                    login.setCodigo("1");
-                    //login.setUsuario(usuarioText.getText());
-
-                    Gson gson = new Gson();
-                    String json = gson.toJson(login);
-
-                    System.out.println ("Enviando para o host -> " + json);
-                    //try {
-
-                            //String resposta = client.send(json);
-                     //       System.out.println ("Resposta -> " + resposta);
-
-                    //} catch (IOException ex) {
-                    //        System.out.println (ex);
-                    //
-                    //client.close();
+                this.client = new Client(hostTx.getText(), Integer.parseInt(portTx.getText()));
+                this.client.start();
+                Login login  = new Login();
+                window.setScene(login.getScene());
             });
+            
+            serverBt.setOnAction(e -> {
+                Server server = new Server(Integer.parseInt(portTx.getText()));
+                window.setScene(server.getScene());
+            });
+            
             window.setScene(scene);
             window.show();
         } catch(Exception ex) {
+            System.err.println(ex);
+        }
+    }
+    
+    @Override
+    public void stop() {
+        try {
+            if (client != null) {
+                client.close();
+            }
+            window.close();
+        } catch (IOException ex) {
             System.err.println(ex);
         }
     }
