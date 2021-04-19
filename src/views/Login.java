@@ -52,7 +52,7 @@ public class Login {
                    
                    if (confirmacao.getSuccess().equals("true")){
                        Formulario form  = new Formulario();
-                       root.setScene(form.getScene());
+                       root.setScene(form.getScene(usuarioTx.getText()));
                    }
                    
 

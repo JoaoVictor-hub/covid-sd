@@ -17,6 +17,7 @@ import server.TCPServer;
 
 public class Server {
     protected static TextArea textArea = new TextArea();
+    protected static TextArea usuariosLogados = new TextArea();
     protected static Button iniciarBt = new Button("Iniciar Servidor");
     protected static Button fecharBt = new Button("Encerrar Servidor");
     protected static GridPane gridPane = new GridPane();
@@ -32,15 +33,18 @@ public class Server {
         gridPane.add(iniciarBt, 0, 1);
         gridPane.add(fecharBt, 1, 1);
         gridPane.add(textArea, 0, 3, 3, 3);
-        
+        gridPane.add(usuariosLogados, 3, 3, 8, 3);
+
         gridPane.setHgap(10);
         gridPane.setVgap(10);
         gridPane.setPadding(new Insets(15, 15, 15, 15));
         
         textArea.setEditable(false);
+        usuariosLogados.setEditable(false);
+
         GridPane.setHalignment(fecharBt, HPos.RIGHT);
         GridPane.setHalignment(iniciarBt, HPos.LEFT);
-        
+
         iniciarBt.setOnAction(e -> {
             this.t.start();
         });
@@ -48,6 +52,7 @@ public class Server {
         fecharBt.setOnAction(e -> {
             this.t.stopThread();
         });
+        
        
         
         return scene;
@@ -56,6 +61,14 @@ public class Server {
     
     public void println(final String text) {
         textArea.appendText(text + System.lineSeparator());
+    }
+    
+    public String getUserStatusList() {
+        return usuariosLogados.getText();
+    }
+    
+    public void printUserStatus(final String text) {
+        usuariosLogados.setText(text);
     }
 
 }

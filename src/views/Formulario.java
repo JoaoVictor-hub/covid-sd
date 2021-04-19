@@ -11,12 +11,21 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
+import models.Avaliacao;
+import models.BaseModel;
 import models.Resposta;
 import models.Respostas;
 import static views.Main.client;
@@ -36,12 +45,18 @@ public class Formulario {
     protected static Label q5Lb = new Label("Você está em isolamento social?");
     protected static Label q6Lb = new Label("Esteve em contato com alguém que apresentou sintomas?");
     protected static Label avisoLb = new Label("É necessário informar todos os campos");
+    protected static Label mensagem;
     protected static Button enviarBt = new Button("Enviar");
+    protected static Button sairBtn = new Button("Sair");
+
     
-    public Scene getScene(){
+    public Scene getScene(String nomeUsuario){
         gridPane.setAlignment(Pos.TOP_CENTER);
         Scene scene = new Scene(gridPane, 800, 600);
         
+        Font font = Font.font("Verdana", FontWeight.BOLD, FontPosture.REGULAR,20);
+        mensagem = new Label("Seja bem-vindo(a) "+nomeUsuario);
+        mensagem.setFont(font);
         q1Cb.getItems().add("Não");
         q1Cb.getItems().add("Sim");
         
@@ -71,14 +86,53 @@ public class Formulario {
                     String json = gson.toJson(respostas);
                     System.out.println ("Enviando para o servidor -> " + json);
                     String resposta = client.send(json);
-                    System.out.println ("Resposta do servidor -> " + resposta);
+                    Alert a = new Alert(Alert.AlertType.CONFIRMATION);
+                    Avaliacao av = new Gson().fromJson(resposta, Avaliacao.class);
+                    if (av.getCovid().equals("true")) {
+                        a.setTitle("Probabilidade Alta");
+                        a.setHeaderText("Você possui mais de 3 sintomas e é possível que tenha coronavírus");
+                        a.setContentText("Escolha uma das opções:");
+                        a.setAlertType(Alert.AlertType.WARNING);
+                        
+                        ButtonType buttonTypeChat = new ButtonType("Abrir Chat",ButtonBar.ButtonData.CANCEL_CLOSE);
+                        ButtonType buttonTypeHospital = new ButtonType("Ver lista de Hospitais",ButtonBar.ButtonData.CANCEL_CLOSE);
+                        
+                        a.getButtonTypes().setAll(buttonTypeChat,buttonTypeHospital);
+                                                
+                        System.out.println(a);
+                    } else {
+                        a.setTitle("Probabilidade Baixa");
+                        a.setHeaderText("Você possui menos de 3 sintomas e provavelmente não possui coronavírus!");
+                        a.setContentText("Entretanto, fique atento para novos sintomas!");
+                        System.out.println(a);
+                    }
+                    a.show();
+
                 } catch (IOException ex) {
                     System.err.println(ex);
                 }
             }
-            
-            avisoLb.setVisible(true);
+            else
+                avisoLb.setVisible(true);
         });
+        
+        sairBtn.setOnAction(e -> {
+            try {
+                BaseModel logout = logout();
+                Gson gson = new Gson();
+                String json = gson.toJson(logout);
+                System.out.println ("Enviando para o servidor -> " + json);
+                client.send(json);
+                client.close();
+                Stage stage = (Stage) sairBtn.getScene().getWindow();
+                //Login login = new Login();
+                //login.getScene(stage);
+                //separar a tela principal do main
+                stage.close();
+            } catch (IOException ex) {
+                System.err.println(ex);
+            }
+       });
         
         q1Cb.setOnAction(e -> {
             
@@ -98,20 +152,25 @@ public class Formulario {
         gridPane.add(q5Cb, 1, 5);
         gridPane.add(q6Cb, 1, 6);
         
+        mensagem.setTextFill(Color.BLUEVIOLET);
+        gridPane.add(mensagem, 0, 0);
+        
         avisoLb.setTextFill(Color.RED);
         gridPane.add(avisoLb, 0, 7);
         
         avisoLb.setVisible(false);
-        
+        sairBtn.setMaxWidth(100);
         enviarBt.setMaxWidth(100);
         q4Tx.setMaxWidth(70);
         
         gridPane.add(enviarBt, 0, 8, 2, 2);
+        gridPane.add(sairBtn, 0,8, 2, 2);
         
         gridPane.setHgap(10);
         gridPane.setVgap(10);
         gridPane.setPadding(new Insets(15, 15, 15, 15));
         GridPane.setHalignment(enviarBt, HPos.CENTER);
+        GridPane.setHalignment(sairBtn, HPos.RIGHT);
         
         return scene;
     }
@@ -127,6 +186,11 @@ public class Formulario {
         return valida;
     }
     
+    public void setResposta(String resposta) {
+        
+        //return valida;
+    }
+    
     public Respostas preencherObjeto(){
         List<Resposta> listaRespostas = new ArrayList<Resposta>();
         System.out.println (q1Cb.getSelectionModel().getSelectedItem().toString());
@@ -138,9 +202,15 @@ public class Formulario {
         listaRespostas.add(new Resposta("6", String.valueOf(q6Cb.getSelectionModel().getSelectedIndex())));
 
         Respostas respostas = new Respostas(listaRespostas);
-        respostas.setCodigo("7");
+        respostas.setCodigo("6");
         
         
         return respostas;
+    }
+    
+     public BaseModel logout(){
+        BaseModel codigo = new BaseModel();
+        codigo.setCodigo("5");
+        return codigo;
     }
 }

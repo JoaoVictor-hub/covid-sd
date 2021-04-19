@@ -41,5 +41,7 @@ public class Client {
     	in = null;
         out = null;
         socket = null;
+        System.out.println("Cliente desconectado\n");
+
     }
 }

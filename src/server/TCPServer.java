@@ -7,10 +7,12 @@ import com.google.gson.*;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
+import java.util.List;
 import models.Avaliacao;
 
 import models.BaseModel;
 import models.ConfirmacaoLogin;
+import models.Resposta;
 import models.Respostas;
 import views.Server;
 
@@ -18,10 +20,13 @@ public class TCPServer extends Thread {
     protected Socket clientSocket = null;
     protected ServerSocket serverSocket = null;
     protected Server serverForm = null;
+    protected int port;
+    protected static int qtdClientes = 0;
     private volatile boolean running = true;
 
     public TCPServer(int port, Server serverForm){
         try {
+            this.port = port;
             this.serverForm = serverForm;
             DBHelper DbHelper = new DBHelper();
             DbHelper.setupDatabase(); 
@@ -31,6 +36,18 @@ public class TCPServer extends Thread {
             System.err.println("Não foi possível ouvir na porta: " + port + ": " + ex);
             System.exit(1);
         }
+    }
+    
+    private void printClientStatus(String message, int tipo) {
+        if(tipo == 0){
+            //message = serverForm.getUserStatusList()+ message + System.lineSeparator();
+        }
+        else{
+           // message = serverForm.getUserStatusList()+ message + System.lineSeparator();
+        }
+        serverForm.printUserStatus(message);
+        System.out.println(message);
+
     }
     
     private void print(String message) {
@@ -59,7 +76,18 @@ public class TCPServer extends Thread {
                 String codigo = getCod(inputLine);
                 switch (codigo) {
                 case "1":
+                    TCPServer.qtdClientes = TCPServer.qtdClientes + 1;
+                    printClientStatus("Cliente ["+TCPServer.qtdClientes+"]"
+                                        +"\n\tNome: "+getNomeUsuario(inputLine)
+                                        +"\n\tPorta: "+this.port+"\n",1);
                     resposta = login(inputLine);
+                    break;
+                case "5":
+                    //clientSocket.close();
+                    resposta = "Cliente Deslogado!";
+                    break;
+                case "6":
+                    resposta = probabilidade(inputLine);
                     break;
                 case "7":
                     resposta = probabilidade(inputLine);
@@ -127,15 +155,31 @@ public class TCPServer extends Thread {
         Gson gson = new Gson();
         String resposta = "";
         Respostas respostas = new Gson().fromJson(input, Respostas.class);
-        
-        //TODO: Calcular probabilidade com base nas respostas do formulario
-        
+        int count = 0;
+        List<Resposta> list = respostas.getRespostas();
+        for(Resposta el : list) {
+            if(el.getResposta().equals("1")){
+                count=count+1;
+            }
+         }
+
         Avaliacao avaliacao = new Avaliacao();
         avaliacao.setCodigo("8");
-        avaliacao.setCovid("true");
-        
+        if(count>=3){
+            avaliacao.setCovid("true");
+        }
+        else{
+            avaliacao.setCovid("false");
+        }
         resposta = gson.toJson(avaliacao);
         return resposta;
+    }
+    
+    public String getNomeUsuario(String input) {
+        Usuario login = new Gson().fromJson(input, Usuario.class);
+        String usuario = login.getUsuario();
+        return usuario;
+
     }
     
     public String login(String input) {
@@ -145,13 +189,13 @@ public class TCPServer extends Thread {
             ConfirmacaoLogin confirmacao = new ConfirmacaoLogin();
             Dao<Usuario, ?> usuarioDao = DbHelper.getDao(Usuario.class);
             String json;
-            Usuario login = new Gson().fromJson(input, Usuario.class);
 
             confirmacao.setCodigo("11");
-            confirmacao.setSuccess("false");
-            confirmacao.setTipo("");
-            String usuario = login.getUsuario();
-
+            confirmacao.setSuccess("true");
+            confirmacao.setTipo("usuario");
+            
+            String usuario = getNomeUsuario(input);
+            
             QueryBuilder<Usuario, ?> queryBuilder = usuarioDao.queryBuilder();
             queryBuilder.where().eq("usuario", usuario);
             PreparedQuery<Usuario> preparedQuery = queryBuilder.prepare();
