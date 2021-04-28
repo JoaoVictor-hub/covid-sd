@@ -11,6 +11,8 @@ import java.util.List;
 import models.Avaliacao;
 
 import models.BaseModel;
+import models.ConfirmacaoChat;
+import models.SolicitacaoChat;
 import models.ConfirmacaoLogin;
 import models.Resposta;
 import models.Respostas;
@@ -92,8 +94,11 @@ public class TCPServer extends Thread {
                 case "7":
                     resposta = probabilidade(inputLine);
                     break;
+                case "92":
+                    resposta = SolicitacaoChat(inputLine);
+                    break;
                 default:
-                     resposta = "Funcionalidade não implementada";
+                     resposta = null;
                 }
                 print("Enviando para o cliente -> " + resposta);
                 out.println(resposta);
@@ -173,6 +178,19 @@ public class TCPServer extends Thread {
         }
         resposta = gson.toJson(avaliacao);
         return resposta;
+    }
+    
+    public String SolicitacaoChat(String input){
+        Gson gson = new Gson();
+        ConfirmacaoChat confirmacao = new ConfirmacaoChat();
+        SolicitacaoChat solicitacao = new Gson().fromJson(input, SolicitacaoChat.class);
+        
+        print("Solicitação de Chat feita por: " + solicitacao.getUsuario());
+        confirmacao.setCodigo("72");
+        confirmacao.setSucesso("true");
+        confirmacao.setUsuario(""); // <- USUARIO SAUDE
+        String json = gson.toJson(confirmacao);
+        return json;
     }
     
     public String getNomeUsuario(String input) {

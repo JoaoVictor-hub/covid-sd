@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ObservableValue;
@@ -14,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -28,6 +30,7 @@ import models.Avaliacao;
 import models.BaseModel;
 import models.Resposta;
 import models.Respostas;
+import models.SolicitacaoChat;
 import static views.Main.client;
 
 public class Formulario {
@@ -50,7 +53,7 @@ public class Formulario {
     protected static Button sairBtn = new Button("Sair");
 
     
-    public Scene getScene(String nomeUsuario){
+    public Scene getScene(Stage root, String nomeUsuario){
         gridPane.setAlignment(Pos.TOP_CENTER);
         Scene scene = new Scene(gridPane, 800, 600);
         
@@ -94,7 +97,7 @@ public class Formulario {
                         a.setContentText("Escolha uma das opções:");
                         a.setAlertType(Alert.AlertType.WARNING);
                         
-                        ButtonType buttonTypeChat = new ButtonType("Abrir Chat",ButtonBar.ButtonData.CANCEL_CLOSE);
+                        ButtonType buttonTypeChat = new ButtonType("Abrir Chat",ButtonBar.ButtonData.LEFT);
                         ButtonType buttonTypeHospital = new ButtonType("Ver lista de Hospitais",ButtonBar.ButtonData.CANCEL_CLOSE);
                         
                         a.getButtonTypes().setAll(buttonTypeChat,buttonTypeHospital);
@@ -106,7 +109,20 @@ public class Formulario {
                         a.setContentText("Entretanto, fique atento para novos sintomas!");
                         System.out.println(a);
                     }
-                    a.show();
+                    //a.show();
+                    Optional<ButtonType> result = a.showAndWait();
+                    ButtonType button = result.get();
+                    if (button.getButtonData().equals(ButtonData.LEFT)) {
+                        gson = new Gson();
+                        SolicitacaoChat solicitaChat = new SolicitacaoChat();
+                        solicitaChat.setCodigo("92");
+                        solicitaChat.setUsuario(nomeUsuario);
+                        json = gson.toJson(solicitaChat);
+                        System.out.println ("Enviando para o servidor -> " + json);
+                        resposta = client.send(json);
+                        Chat chat  = new Chat(nomeUsuario);
+                        root.setScene(chat.getScene());
+                    } 
 
                 } catch (IOException ex) {
                     System.err.println(ex);
