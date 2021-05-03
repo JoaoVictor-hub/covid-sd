@@ -23,6 +23,8 @@ public class DBHelper {
 		TableUtils.createTableIfNotExists(connection, Usuario.class);
 		Dao<Usuario, ?> dao = getDao(Usuario.class);
 		dao.createIfNotExists(new Usuario(1, "admin", "admin"));
+                dao.createIfNotExists(new Usuario(3, "saude", "saude"));
+                dao.createIfNotExists(new Usuario(3, "usuario", "usuario"));
     }
 
 	public <T> Dao<T, ?> getDao(Class<T> dataClass) throws SQLException {

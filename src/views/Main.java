@@ -1,6 +1,8 @@
 package views;
 import client.Client;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -48,14 +50,19 @@ public class Main extends Application {
             
             clientBt.setOnAction(e -> {
                 this.client = new Client(hostTx.getText(), Integer.parseInt(portTx.getText()));
-                this.client.start();
                 Login login  = new Login();
                 login.getScene(window);
             });
             
             serverBt.setOnAction(e -> {
-                Server server = new Server(Integer.parseInt(portTx.getText()));
-                window.setScene(server.getScene());
+                Server server;
+                try {
+                    server = new Server(Integer.parseInt(portTx.getText()));
+                    window.setScene(server.getScene());
+                } catch (IOException ex) {
+                    System.err.println(ex);
+                }
+                
             });
             
             window.setScene(scene);

@@ -51,8 +51,13 @@ public class Login {
                    ConfirmacaoLogin confirmacao = new Gson().fromJson(resposta, ConfirmacaoLogin.class);
                    
                    if (confirmacao.getSuccess().equals("true")){
-                       Formulario form  = new Formulario();
-                       root.setScene(form.getScene(root, usuarioTx.getText()));
+                        if (confirmacao.getTipo().equals("saude")) {
+                            Chat chat  = new Chat(login.getUsuario());
+                            root.setScene(chat.getScene());
+                        } else {
+                            Formulario form  = new Formulario();
+                            root.setScene(form.getScene(root, usuarioTx.getText()));
+                        }
                    }
                    
 

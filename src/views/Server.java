@@ -1,7 +1,12 @@
 package views;
 
 import com.google.gson.Gson;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,11 +28,15 @@ public class Server {
     protected static GridPane gridPane = new GridPane();
     protected Parent root;
     TCPServer t = null;
+    protected ServerSocket serverSocket = null;
+    protected int port;
     
-    public Server(int port) {
-        this.t = new TCPServer(port, this);
+    
+    public Server(int port) throws IOException {
+        this.port = port;
+        
     }
-    public Scene getScene(){
+    public Scene getScene() throws IOException{
         Scene scene = new Scene(gridPane, 800, 300);
         gridPane.setAlignment(Pos.TOP_CENTER);
         gridPane.add(iniciarBt, 0, 1);
@@ -44,9 +53,12 @@ public class Server {
 
         GridPane.setHalignment(fecharBt, HPos.RIGHT);
         GridPane.setHalignment(iniciarBt, HPos.LEFT);
-
+        
+        
+        
         iniciarBt.setOnAction(e -> {
-            this.t.start();
+            t = new TCPServer(this);
+            t.startServer(this.port);
         });
         
         fecharBt.setOnAction(e -> {
@@ -57,6 +69,8 @@ public class Server {
         
         return scene;
     }
+    
+    
 
     
     public void println(final String text) {

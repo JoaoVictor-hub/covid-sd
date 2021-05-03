@@ -1,4 +1,5 @@
 package server;
+import client.Client;
 import models.Usuario;
 import java.net.*;
 import java.sql.SQLException;
@@ -7,7 +8,10 @@ import com.google.gson.*;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import models.Avaliacao;
 
 import models.BaseModel;
@@ -19,24 +23,50 @@ import models.Respostas;
 import views.Server;
 
 public class TCPServer extends Thread {
-    protected Socket clientSocket = null;
-    protected ServerSocket serverSocket = null;
-    protected Server serverForm = null;
+    protected ArrayList<Client> clientes;
+    protected Socket con;
+    protected ServerSocket serverSocket;
+    protected Server serverForm;
     protected int port;
     protected static int qtdClientes = 0;
     private volatile boolean running = true;
+    protected BufferedReader in;
+    protected PrintWriter out;
+    
 
-    public TCPServer(int port, Server serverForm){
+    public TCPServer(Server serverForm) {
         try {
-            this.port = port;
             this.serverForm = serverForm;
             DBHelper DbHelper = new DBHelper();
-            DbHelper.setupDatabase(); 
-            serverSocket = new ServerSocket(port);
+            DbHelper.setupDatabase();
             print("Conexão com Socket Criada na porta " + port);
-        } catch (IOException | SQLException ex) {
+        } catch (SQLException ex) {
             System.err.println("Não foi possível ouvir na porta: " + port + ": " + ex);
             System.exit(1);
+        }
+    }
+    
+    public TCPServer(Socket socket){
+        try {
+            this.con = socket;
+            in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            print("Conexão com Socket Criada na porta " + port);
+        } catch (IOException ex) {
+            System.err.println(ex);
+        }
+    }
+    
+    public void startServer(int port){
+        try {
+            this.serverSocket = new ServerSocket(port);
+            
+            while(true) {
+                Socket con = serverSocket.accept();
+                TCPServer t = new TCPServer(con);
+                t.start();
+            }
+        } catch (IOException ex) {
+            System.err.println(ex);
         }
     }
     
@@ -53,96 +83,73 @@ public class TCPServer extends Thread {
     }
     
     private void print(String message) {
-        serverForm.println(message);
+        //serverForm.println(message);
         System.out.println(message);
     }
 
-    private void nowServe(Socket clientSoc) {
-        clientSocket = clientSoc;
-        try {
-            PrintStream out = new PrintStream(clientSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-            String inputLine;
-
-            while ((inputLine = in.readLine()) != null) {
-                if (this.interrupted()) {
-                    out.close();
-                    in.close();
-                    clientSocket.close();
-                    return;
-                }
-                //System.out.println("Recebendo -> " + inputLine);
-                print("Recebendo do cliente -> " + inputLine);
-                String resposta = null;
-                String codigo = getCod(inputLine);
-                switch (codigo) {
-                case "1":
-                    TCPServer.qtdClientes = TCPServer.qtdClientes + 1;
-                    printClientStatus("Cliente ["+TCPServer.qtdClientes+"]"
-                                        +"\n\tNome: "+getNomeUsuario(inputLine)
-                                        +"\n\tPorta: "+this.port+"\n",1);
-                    resposta = login(inputLine);
-                    break;
-                case "5":
-                    //clientSocket.close();
-                    resposta = "Cliente Deslogado!";
-                    break;
-                case "6":
-                    resposta = probabilidade(inputLine);
-                    break;
-                case "7":
-                    resposta = probabilidade(inputLine);
-                    break;
-                case "92":
-                    resposta = SolicitacaoChat(inputLine);
-                    break;
-                default:
-                     resposta = null;
-                }
-                print("Enviando para o cliente -> " + resposta);
-                out.println(resposta);
-
-            }
-
-            out.close();
-            in.close();
-            clientSocket.close();
-        } catch (IOException ex) {
-            print(ex.getMessage());
-            System.err.println("Problemas com a Comunicação no Servidor");
-            System.exit(1);
-        }
+    private void nowServe() {
+        
     }
 
     @Override
     public void run() {
         print("Nova Thread de Comunicação Iniciada");
-        //System.out.println("Nova Thread de Comunicação Iniciada");
         try {
-            while (this.running) {
-                print("Esperando pela conexão");
-                nowServe(serverSocket.accept());
-                if (this.interrupted()) {
-                    serverSocket.close();
-                    return;
+            out = new PrintWriter(this.con.getOutputStream());
+            
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null) {
+                
+                //System.out.println("Recebendo -> " + inputLine);
+                print("Recebendo do cliente -> " + inputLine);
+                String resposta = null;
+                String codigo = getCod(inputLine);
+                switch (codigo) {
+                    case "1":
+                        //TCPServer.qtdClientes = TCPServer.qtdClientes + 1;
+                        //printClientStatus("Cliente ["+TCPServer.qtdClientes+"]"
+                        //                   +"\n\tNome: "+getNomeUsuario(inputLine)
+                        //                    +"\n\tPorta: "+this.port+"\n",1);
+                        resposta = login(inputLine);
+                        break;
+                    case "5":
+                        //clientSocket.close();
+                        resposta = "Cliente Deslogado!";
+                        break;
+                    case "6":
+                        resposta = probabilidade(inputLine);
+                        break;
+                    case "7":
+                        resposta = probabilidade(inputLine);
+                        break;
+                    case "92":
+                        resposta = SolicitacaoChat(inputLine);
+                        break;
+                    default:
+                        resposta = null;
                 }
+                print("Enviando para o cliente -> " + resposta);
+                out.println(resposta);
+                out.flush();
+
             }
+
         } catch (IOException ex) {
-            System.err.println("Conexão Falhou" + ex);
+            //print(ex.getMessage());
+            System.err.println("Problemas com a Comunicação no Servidor");
             System.exit(1);
         }
-        
     }
     
     public void stopThread() {
         try {
             this.running = false;
             interrupt();
-            print("Thread de Comunicação Encerrada");
+            //print("Thread de Comunicação Encerrada");
         } catch (Exception ex) {
-            print(ex.getMessage());
-            System.err.println("ex");
+            //print(ex.getMessage());
+            System.err.println(ex);
             System.exit(1);
         }
     }

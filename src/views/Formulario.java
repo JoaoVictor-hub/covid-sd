@@ -119,7 +119,7 @@ public class Formulario {
                         solicitaChat.setUsuario(nomeUsuario);
                         json = gson.toJson(solicitaChat);
                         System.out.println ("Enviando para o servidor -> " + json);
-                        resposta = client.send(json);
+                        client.onlySend(json);
                         Chat chat  = new Chat(nomeUsuario);
                         root.setScene(chat.getScene());
                     } 
@@ -138,7 +138,7 @@ public class Formulario {
                 Gson gson = new Gson();
                 String json = gson.toJson(logout);
                 System.out.println ("Enviando para o servidor -> " + json);
-                client.send(json);
+                client.onlySend(json);
                 client.close();
                 Stage stage = (Stage) sairBtn.getScene().getWindow();
                 //Login login = new Login();
