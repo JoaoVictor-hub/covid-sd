@@ -1,6 +1,8 @@
 package client;
 import java.io.*;
 import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Client {
     protected Socket socket;
@@ -38,6 +40,20 @@ public class Client {
     public void onlySend(String mensagem) throws IOException {
     	out.println(mensagem);
     	out.flush();
+    }
+    
+    public String listen() throws IOException{
+        String resposta = null;
+        while(!in.ready()) {
+            System.out.println ("Esperando pela resposta");
+            if(in.ready()){
+                resposta = in.readLine();
+                System.out.println (resposta);
+                break;
+            }
+            
+        }
+        return resposta;
     }
     
     public void close() throws IOException {

@@ -113,15 +113,9 @@ public class Formulario {
                     Optional<ButtonType> result = a.showAndWait();
                     ButtonType button = result.get();
                     if (button.getButtonData().equals(ButtonData.LEFT)) {
-                        gson = new Gson();
-                        SolicitacaoChat solicitaChat = new SolicitacaoChat();
-                        solicitaChat.setCodigo("92");
-                        solicitaChat.setUsuario(nomeUsuario);
-                        json = gson.toJson(solicitaChat);
-                        System.out.println ("Enviando para o servidor -> " + json);
-                        client.onlySend(json);
                         Chat chat  = new Chat(nomeUsuario);
                         root.setScene(chat.getScene());
+                        chat.iniciarChat();
                     } 
 
                 } catch (IOException ex) {

@@ -15,15 +15,18 @@ import java.util.logging.Logger;
 import models.Avaliacao;
 
 import models.BaseModel;
+import models.ClientList;
 import models.ConfirmacaoChat;
 import models.SolicitacaoChat;
 import models.ConfirmacaoLogin;
+import models.EnvioMensagem;
+import models.RedirecionamentoMensagem;
 import models.Resposta;
 import models.Respostas;
 import views.Server;
 
 public class TCPServer extends Thread {
-    protected ArrayList<Client> clientes;
+    private static ArrayList<ClientList> clients = new ArrayList<ClientList>();
     protected Socket con;
     protected ServerSocket serverSocket;
     protected Server serverForm;
@@ -87,10 +90,6 @@ public class TCPServer extends Thread {
         System.out.println(message);
     }
 
-    private void nowServe() {
-        
-    }
-
     @Override
     public void run() {
         print("Nova Thread de Comunicação Iniciada");
@@ -103,7 +102,7 @@ public class TCPServer extends Thread {
                 
                 //System.out.println("Recebendo -> " + inputLine);
                 print("Recebendo do cliente -> " + inputLine);
-                String resposta = null;
+                String resposta;
                 String codigo = getCod(inputLine);
                 switch (codigo) {
                     case "1":
@@ -112,6 +111,8 @@ public class TCPServer extends Thread {
                         //                   +"\n\tNome: "+getNomeUsuario(inputLine)
                         //                    +"\n\tPorta: "+this.port+"\n",1);
                         resposta = login(inputLine);
+                        clients.add(new ClientList(out, getNomeUsuario(inputLine)));
+                        System.out.println("Client adicionado -> " + getNomeUsuario(inputLine));
                         break;
                     case "5":
                         //clientSocket.close();
@@ -124,7 +125,10 @@ public class TCPServer extends Thread {
                         resposta = probabilidade(inputLine);
                         break;
                     case "92":
-                        resposta = SolicitacaoChat(inputLine);
+                        resposta = solicitacaoChat(inputLine);
+                        break;
+                    case "73":
+                        resposta = messageToClient(inputLine);
                         break;
                     default:
                         resposta = null;
@@ -140,6 +144,35 @@ public class TCPServer extends Thread {
             System.err.println("Problemas com a Comunicação no Servidor");
             System.exit(1);
         }
+    }
+    
+    public String messageToClient(String input)
+    {
+        try{
+            PrintWriter bwS;
+            Gson gson = new Gson();
+            String resposta = "";
+            EnvioMensagem mensagem = new Gson().fromJson(input, EnvioMensagem.class);
+
+            for(ClientList client : clients){
+                System.out.println("usuario" + client.getUsuario() + " destino" + mensagem.getDestino() + " client" + client.getClient() + " mensagem" +  mensagem.getMsg());
+                if(client.getUsuario().equals(mensagem.getDestino())){
+                    RedirecionamentoMensagem redireciona = new RedirecionamentoMensagem();
+                    redireciona.setCodigo("74");
+                    redireciona.setMsg(mensagem.getMsg());
+                    redireciona.setOrigem(mensagem.getDestino());
+                    String json = gson.toJson(redireciona);
+                    System.out.println(json);
+                    client.getClient().println(json);
+                    client.getClient().flush();
+                }
+            }
+
+            return resposta;
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
+        return null;
     }
     
     public void stopThread() {
@@ -186,8 +219,8 @@ public class TCPServer extends Thread {
         resposta = gson.toJson(avaliacao);
         return resposta;
     }
-    
-    public String SolicitacaoChat(String input){
+   
+    public String solicitacaoChat(String input){
         Gson gson = new Gson();
         ConfirmacaoChat confirmacao = new ConfirmacaoChat();
         SolicitacaoChat solicitacao = new Gson().fromJson(input, SolicitacaoChat.class);
@@ -195,7 +228,7 @@ public class TCPServer extends Thread {
         print("Solicitação de Chat feita por: " + solicitacao.getUsuario());
         confirmacao.setCodigo("72");
         confirmacao.setSucesso("true");
-        confirmacao.setUsuario(""); // <- USUARIO SAUDE
+        confirmacao.setUsuario("saude"); // <- USUARIO SAUDE
         String json = gson.toJson(confirmacao);
         return json;
     }
@@ -227,10 +260,10 @@ public class TCPServer extends Thread {
             Usuario usuarioRetornado = usuarioDao.queryForFirst(preparedQuery);
 
             if (usuarioRetornado != null) {
-                    confirmacao.setTipo(usuarioRetornado.getTipo());
-                    confirmacao.setSuccess("true");
-                    json = gson.toJson(confirmacao);
-                    return json;
+                confirmacao.setTipo(usuarioRetornado.getTipo());
+                confirmacao.setSuccess("true");
+                json = gson.toJson(confirmacao);
+                return json;
             }
 
             json = gson.toJson(confirmacao);

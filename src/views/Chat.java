@@ -2,6 +2,8 @@ package views;
 
 import com.google.gson.Gson;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -9,7 +11,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import models.BaseModel;
 import models.EnvioMensagem;
+import models.RedirecionamentoMensagem;
+import models.SolicitacaoChat;
 import static views.Main.client;
 
 public class Chat {
@@ -38,13 +43,43 @@ public class Chat {
         msgTx.setEditable(false);
         
         enviarBt.setOnAction(e -> {
-            enviarMensagem(inputTx.getText());
+            String resposta = enviarMensagem(inputTx.getText());
             msgTx.appendText(nomeUsuario + ": " + inputTx.getText() + System.lineSeparator());
+            //resposta = tratarResposta(resposta);
+            //msgTx.appendText(resposta + System.lineSeparator());
             inputTx.clear();
         });
                 
                 
         return scene;
+    }
+    
+    public String iniciarChat() {
+        try {
+            Gson gson = new Gson();
+            String resposta;
+            SolicitacaoChat iniciarChat = new SolicitacaoChat();
+            iniciarChat.setCodigo("92");
+            iniciarChat.setUsuario(this.nomeUsuario);
+            String json = gson.toJson(iniciarChat);
+            System.out.println ("Enviando para o servidor -> " + json);
+            client.onlySend(json);
+            resposta = client.listen();
+            return resposta;
+        } catch (IOException ex) {
+            System.err.println(ex);
+            return ex.getMessage();
+        }
+    }
+    
+    public String tratarResposta(String msg){
+        Gson gson = new Gson();
+        BaseModel codigo = new Gson().fromJson(msg, BaseModel.class);
+        if(codigo.getCodigo().equals("74")){
+            RedirecionamentoMensagem mensagem = new Gson().fromJson(msg, RedirecionamentoMensagem.class);
+            return mensagem.getOrigem() + ": " + mensagem.getMsg();
+        }
+        return null;
     }
     
     public String enviarMensagem(String msg){
@@ -53,11 +88,13 @@ public class Chat {
             String resposta;
             EnvioMensagem mensagem = new EnvioMensagem();
             mensagem.setCodigo("73");
-            mensagem.setDestino(nomeUsuario); // <- USUARIO SAUDE
+            mensagem.setDestino("saude"); // <- USUARIO SAUDE
             mensagem.setMsg(msg);
             String json = gson.toJson(mensagem);
             System.out.println ("Enviando para o servidor -> " + json);
-            resposta = client.send(json);
+            client.onlySend(json);
+            resposta = client.listen();
+            System.out.println ("Resposta do Servidor -> " + resposta);
             return resposta;
         } catch (IOException ex) {
             System.err.println(ex);
