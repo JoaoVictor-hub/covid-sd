@@ -1,8 +1,11 @@
 package client;
+import com.google.gson.Gson;
 import java.io.*;
 import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import models.BaseModel;
+import models.RedirecionamentoMensagem;
 
 public class Client {
     protected Socket socket;
@@ -44,16 +47,33 @@ public class Client {
     
     public String listen() throws IOException{
         String resposta = null;
-        while(!in.ready()) {
-            System.out.println ("Esperando pela resposta");
+            
             if(in.ready()){
                 resposta = in.readLine();
                 System.out.println (resposta);
-                break;
+                resposta = tratarResposta(resposta);
+                System.out.println (resposta);
+                if(resposta != null) {
+                    System.out.println (resposta);
+                    return resposta;
+                }
+                
             }
-            
-        }
         return resposta;
+    }
+    
+    public String tratarResposta(String msg){
+        try {
+            Gson gson = new Gson();
+            BaseModel codigo = new Gson().fromJson(msg, BaseModel.class);
+            if(codigo.getCodigo().equals("74")){
+                RedirecionamentoMensagem mensagem = new Gson().fromJson(msg, RedirecionamentoMensagem.class);
+                return mensagem.getOrigem() + ": " + mensagem.getMsg();
+            }
+            return null;
+        } catch(Exception ex) {
+            return null;
+        }
     }
     
     public void close() throws IOException {

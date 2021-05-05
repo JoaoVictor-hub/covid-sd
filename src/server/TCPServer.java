@@ -26,7 +26,7 @@ import models.Respostas;
 import views.Server;
 
 public class TCPServer extends Thread {
-    private static ArrayList<ClientList> clients = new ArrayList<ClientList>();
+    private volatile static ArrayList<ClientList> clients = new ArrayList<ClientList>();
     protected Socket con;
     protected ServerSocket serverSocket;
     protected Server serverForm;
@@ -111,7 +111,7 @@ public class TCPServer extends Thread {
                         //                   +"\n\tNome: "+getNomeUsuario(inputLine)
                         //                    +"\n\tPorta: "+this.port+"\n",1);
                         resposta = login(inputLine);
-                        clients.add(new ClientList(out, getNomeUsuario(inputLine)));
+                        clients.add(new ClientList(this.con, out, getNomeUsuario(inputLine)));
                         System.out.println("Client adicionado -> " + getNomeUsuario(inputLine));
                         break;
                     case "5":
@@ -134,9 +134,10 @@ public class TCPServer extends Thread {
                         resposta = null;
                 }
                 print("Enviando para o cliente -> " + resposta);
-                out.println(resposta);
-                out.flush();
-
+                if (resposta != null) {
+                    out.println(resposta);
+                    out.flush();
+                }
             }
 
         } catch (IOException ex) {
@@ -156,19 +157,22 @@ public class TCPServer extends Thread {
 
             for(ClientList client : clients){
                 System.out.println("usuario" + client.getUsuario() + " destino" + mensagem.getDestino() + " client" + client.getClient() + " mensagem" +  mensagem.getMsg());
-                if(client.getUsuario().equals(mensagem.getDestino())){
+                if(!client.getUsuario().equals(mensagem.getDestino())){
                     RedirecionamentoMensagem redireciona = new RedirecionamentoMensagem();
                     redireciona.setCodigo("74");
                     redireciona.setMsg(mensagem.getMsg());
                     redireciona.setOrigem(mensagem.getDestino());
                     String json = gson.toJson(redireciona);
                     System.out.println(json);
-                    client.getClient().println(json);
-                    client.getClient().flush();
+                    //client.getSocket();
+                    PrintWriter out2 = new PrintWriter(client.getSocket().getOutputStream());
+                    out2.println(json);
+                    out2.flush();
+                    //client.getClient().flush();
                 }
             }
 
-            return resposta;
+            return null;
         } catch (Exception ex) {
             System.err.println(ex);
         }

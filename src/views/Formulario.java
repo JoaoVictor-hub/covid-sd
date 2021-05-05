@@ -115,7 +115,6 @@ public class Formulario {
                     if (button.getButtonData().equals(ButtonData.LEFT)) {
                         Chat chat  = new Chat(nomeUsuario);
                         root.setScene(chat.getScene());
-                        chat.iniciarChat();
                     } 
 
                 } catch (IOException ex) {
